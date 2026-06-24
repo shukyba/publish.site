@@ -15,22 +15,25 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
           lfs: false
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
+        env:
+          # Baked into the client bundle by `next build`. Must be set at BUILD time, not via SWA app settings.
+          NEXT_PUBLIC_API_BASE_URL: https://publish-api-hqf0chcba9fkc3hd.westeurope-01.azurewebsites.net
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_GREEN_GROUND_01E3A6D03 }}
           repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
           action: "upload"
           ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
           # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
-          app_location: "/" # App source code path
-          api_location: "" # Api source code path - optional
-          output_location: "build" # Built app content directory - optional
+          app_location: "/" # App source code path (Next.js app at repo root)
+          api_location: "" # Leave empty for hybrid Next.js; API routes under app/api are auto-detected
+          output_location: "" # Leave empty for hybrid Next.js; SWA reads .next/ automatically
           ###### End of Repository/Build Configurations ######
 
   close_pull_request_job:

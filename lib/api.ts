@@ -16,20 +16,11 @@ export const SIGN_IN_URL = "https://iam.cliposts.com/sign-in";
 export const SIGN_UP_URL = "https://iam.cliposts.com/sign-up";
 
 export function getApiBaseUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_PUBLISH_API_BASE_URL ??
-    process.env.NEXT_PUBLIC_API_BASE_URL ??
-    defaultBase
-  ).replace(/\/$/, "");
+  return (process.env.NEXT_PUBLIC_API_BASE_URL ?? defaultBase).replace(/\/$/, "");
 }
 
 export function getServerApiBaseUrl(): string {
-  return (
-    process.env.PUBLISH_API_URL ??
-    process.env.NEXT_PUBLIC_PUBLISH_API_BASE_URL ??
-    process.env.NEXT_PUBLIC_API_BASE_URL ??
-    defaultBase
-  ).replace(/\/$/, "");
+  return (process.env.PUBLISH_API_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? defaultBase).replace(/\/$/, "");
 }
 
 function platformToApi(platform: SocialPlatform): "LinkedIn" | "X" | "Facebook" {
