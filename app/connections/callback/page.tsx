@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { listConnections } from "../../lib/api";
-import { loadAuth } from "../../lib/campaign-store";
-import { SocialPlatform } from "../../lib/types";
+import { listConnections } from "../../../lib/api";
+import { loadAuth } from "../../../lib/campaign-store";
+import { SocialPlatform } from "../../../lib/types";
 
 const PLATFORM_VALUES: SocialPlatform[] = ["linkedin", "x", "facebook"];
 

@@ -20,7 +20,7 @@ function connectionFingerprint(connection: SocialConnection | undefined): string
 function hasNewConnection(
   baseline: SocialConnection | undefined,
   current: SocialConnection | undefined,
-): current is SocialConnection {
+): boolean {
   if (!current || current.status !== "connected") return false;
   return connectionFingerprint(baseline) !== connectionFingerprint(current);
 }
@@ -44,7 +44,7 @@ async function pollUntilConnected(
     const result = await listConnections(isAuthenticated);
     const match = findPlatformConnection(result.data, platform);
 
-    if (hasNewConnection(baseline, match)) {
+    if (hasNewConnection(baseline, match) && match) {
       return { ok: true, connection: match };
     }
 
