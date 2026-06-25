@@ -11,9 +11,22 @@ import {
 import { getPublishUserId } from "./campaign-store";
 
 const defaultBase = "http://localhost:5238";
+const defaultSiteUrl = "https://www.cliposts.com";
+const iamBaseUrl = "https://iam.cliposts.com";
 
-export const SIGN_IN_URL = "https://iam.cliposts.com/sign-in";
-export const SIGN_UP_URL = "https://iam.cliposts.com/sign-up";
+function getPublishSiteUrl(): string {
+  return (process.env.CLIPOSTS_SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? defaultSiteUrl).replace(
+    /\/$/,
+    "",
+  );
+}
+
+function buildIamAuthUrl(path: "/sign-in" | "/sign-up", redirectTo: string): string {
+  return `${iamBaseUrl}${path}?url=${encodeURIComponent(redirectTo)}`;
+}
+
+export const SIGN_IN_URL = buildIamAuthUrl("/sign-in", `${getPublishSiteUrl()}/publish`);
+export const SIGN_UP_URL = buildIamAuthUrl("/sign-up", `${getPublishSiteUrl()}/publish/?signup=true`);
 
 export function getApiBaseUrl(): string {
   return (process.env.NEXT_PUBLIC_API_BASE_URL ?? defaultBase).replace(/\/$/, "");
