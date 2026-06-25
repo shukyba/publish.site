@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { withMountPath } from "../../../lib/mount-path";
 import { listConnections } from "../../../lib/api";
 import { loadAuth } from "../../../lib/campaign-store";
 import { SocialPlatform } from "../../../lib/types";
@@ -48,7 +49,7 @@ export default function ConnectionsCallbackPage() {
     <main className="section-shell panel" style={{ marginTop: "48px" }}>
       <h1>Social connection</h1>
       <p>{message}</p>
-      <Link className="button button-primary" href="/">
+      <Link className="button button-primary" href={withMountPath("/")}>
         Back to Publish
       </Link>
     </main>

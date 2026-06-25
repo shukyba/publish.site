@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withMountPath } from "../../../lib/mount-path";
 import { SocialPlatform } from "../../../lib/types";
 
 type HandoffRequest = {
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
   });
   if (body.metadata) params.set("metadata", JSON.stringify(body.metadata));
 
-  const handoffUrl = `/campaign?${params.toString()}`;
+  const handoffUrl = withMountPath(`/campaign?${params.toString()}`);
   return NextResponse.json({
     ok: true,
     handoffUrl,

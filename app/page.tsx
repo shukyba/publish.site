@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { GeneratorClient } from "./generator-client";
 import { SIGN_UP_URL } from "../lib/api";
+import { withMountPath } from "../lib/mount-path";
 import { HomeNav } from "./home-nav";
 import { ContactButton } from "./contact-button";
 
@@ -131,8 +132,8 @@ export default function Home() {
           <a href="#generator">Try it free</a>
           <a href="#pricing">Pricing</a>
           <a href="#faq">FAQ</a>
-          <Link href="/privacy">Privacy</Link>
-          <Link href="/terms">Terms</Link>
+          <Link href={withMountPath("/privacy")}>Privacy</Link>
+          <Link href={withMountPath("/terms")}>Terms</Link>
           <ContactButton />
         </div>
       </footer>

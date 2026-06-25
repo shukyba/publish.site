@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { withMountPath } from "../../../lib/mount-path";
 import { SiteHeader } from "../../site-header";
 
 type ConfirmationPageProps = {
@@ -49,7 +50,7 @@ export default async function CampaignConfirmationPage({ searchParams }: Confirm
           </li>
         </ul>
         <div className="hero-cta">
-          <Link className="button button-primary" href="/scheduled-posts">
+          <Link className="button button-primary" href={withMountPath("/scheduled-posts")}>
             View scheduled posts
           </Link>
         </div>
@@ -65,7 +66,7 @@ export default async function CampaignConfirmationPage({ searchParams }: Confirm
           </p>
         </div>
         <div className="hero-cta">
-          <Link className="button button-secondary" href="/#generator">
+          <Link className="button button-secondary" href={withMountPath("/#generator")}>
             Generate another post plan
           </Link>
         </div>

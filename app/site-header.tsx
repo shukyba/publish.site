@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SIGN_IN_URL } from "../lib/api";
+import { withMountPath } from "../lib/mount-path";
 import { clearAuthState, loadAuth } from "../lib/campaign-store";
 
 const SIGN_OFF_URL = "https://iam.cliposts.com/sign-off";
@@ -27,7 +28,7 @@ export function SiteHeader() {
     <nav className="nav">
       <Link
         className="brand brand-link"
-        href="/"
+        href={withMountPath("/")}
         aria-label="Cliposts Publish home"
         onClick={(event) => {
           if (pathname === "/") {
@@ -40,10 +41,10 @@ export function SiteHeader() {
         <span>Cliposts Publish</span>
       </Link>
       <div className="nav-links">
-        {!isAuthenticated ? <Link href="/#generator">Try it free</Link> : null}
-        <Link href="/#pricing">Pricing</Link>
-        <Link href="/#faq">FAQ</Link>
-        <Link href="/scheduled-posts">Scheduled posts</Link>
+        {!isAuthenticated ? <Link href={withMountPath("/#generator")}>Try it free</Link> : null}
+        <Link href={withMountPath("/#pricing")}>Pricing</Link>
+        <Link href={withMountPath("/#faq")}>FAQ</Link>
+        <Link href={withMountPath("/scheduled-posts")}>Scheduled posts</Link>
         {isAuthenticated ? (
           <a
             href={SIGN_OFF_URL}

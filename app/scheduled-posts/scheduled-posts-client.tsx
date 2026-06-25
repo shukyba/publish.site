@@ -11,6 +11,7 @@ import {
 } from "../../lib/api";
 import { loadAuth } from "../../lib/campaign-store";
 import { formatUtcLocal, parseUtcDate } from "../../lib/datetime";
+import { withMountPath } from "../../lib/mount-path";
 import { ScheduledPostItem } from "../../lib/types";
 import { SiteHeader } from "../site-header";
 
@@ -222,7 +223,7 @@ export function ScheduledPostsClient() {
         <section className="section-shell panel">
           <div className="empty-state">
             <p>No scheduled posts yet.</p>
-            <Link className="button button-primary" href="/#generator">
+            <Link className="button button-primary" href={withMountPath("/#generator")}>
               Generate post plan
             </Link>
           </div>

@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { generateCampaign, listConnections, SIGN_IN_URL, SIGN_UP_URL } from "../lib/api";
 import { refreshPlatformConnections, runPlatformConnect, runPlatformDisconnect } from "../lib/connect-oauth";
 import { loadAuth, loadConnections, saveAuth, saveCampaign, saveConnections } from "../lib/campaign-store";
+import { usePublishRouter } from "../lib/use-publish-router";
 import { CampaignSeed, SocialConnection, SocialPlatform } from "../lib/types";
 
 const PLATFORM_OPTIONS: Array<{
@@ -56,7 +56,7 @@ function normalizeConnections(saved: SocialConnection[] | null): SocialConnectio
 }
 
 export function GeneratorClient() {
-  const router = useRouter();
+  const router = usePublishRouter();
   const [coreIdea, setCoreIdea] = useState("");
   const [platform, setPlatform] = useState<SocialPlatform>("linkedin");
   const [isAuthenticated, setIsAuthenticated] = useState(() => loadAuth());

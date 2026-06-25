@@ -25,6 +25,8 @@ jobs:
         env:
           # Baked into the client bundle by `next build`. Must be set at BUILD time, not via SWA app settings.
           NEXT_PUBLIC_API_BASE_URL: https://publish-api-hqf0chcba9fkc3hd.westeurope-01.azurewebsites.net
+          NEXT_PUBLIC_MOUNT_PATH: /publish
+          NEXT_PUBLIC_ASSET_PREFIX: /publish
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_GREEN_GROUND_01E3A6D03 }}
           repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)

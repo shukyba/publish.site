@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { generateCampaign, listConnections, schedulePosts, SIGN_IN_URL, SIGN_UP_URL } from "../lib/api";
 import { runPlatformConnect, runPlatformDisconnect } from "../lib/connect-oauth";
+import { usePublishRouter } from "../lib/use-publish-router";
+import { withMountPath } from "../lib/mount-path";
 import {
   loadAuth,
   loadCampaign,
@@ -50,7 +52,7 @@ function platformTitle(platform: SocialPlatform) {
 }
 
 export function CampaignClient() {
-  const router = useRouter();
+  const router = usePublishRouter();
   const searchParams = useSearchParams();
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -456,7 +458,7 @@ export function CampaignClient() {
         <section className="section-shell panel">
           <div className="empty-state">
             <p>No campaign is loaded yet. Generate one from the home page.</p>
-            <Link className="button button-primary" href="/">
+            <Link className="button button-primary" href={withMountPath("/")}>
               Go to generator
             </Link>
           </div>
