@@ -1,18 +1,17 @@
 import { chromium } from "playwright";
 
-const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "/publish";
 const CANDIDATE_URLS = ["http://localhost:3001", "http://localhost:3000", "http://localhost:3002"];
 
 async function resolveBaseUrl(page) {
   for (const url of CANDIDATE_URLS) {
     try {
-      const response = await page.goto(`${url}${BASE_PATH}`, { waitUntil: "domcontentloaded", timeout: 8000 });
-      if (response && response.ok()) return `${url}${BASE_PATH}`;
+      const response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 8000 });
+      if (response && response.ok()) return url;
     } catch {
       // Try next candidate.
     }
   }
-  throw new Error(`Could not reach publish.site on any of: ${CANDIDATE_URLS.join(", ")}${BASE_PATH}`);
+  throw new Error(`Could not reach publish.site on any of: ${CANDIDATE_URLS.join(", ")}`);
 }
 
 async function main() {
