@@ -21,12 +21,13 @@ function getPublishSiteUrl(): string {
   );
 }
 
-function buildIamAuthUrl(path: "/sign-in" | "/sign-up", redirectTo: string): string {
+function buildIamAuthUrl(path: "/sign-in" | "/sign-up" | "/sign-off", redirectTo: string): string {
   return `${iamBaseUrl}${path}?url=${encodeURIComponent(redirectTo)}`;
 }
 
 export const SIGN_IN_URL = buildIamAuthUrl("/sign-in", `${getPublishSiteUrl()}/publish`);
 export const SIGN_UP_URL = buildIamAuthUrl("/sign-up", `${getPublishSiteUrl()}/publish/?signup=true`);
+export const SIGN_OFF_URL = buildIamAuthUrl("/sign-off", `${getPublishSiteUrl()}/publish`);
 
 export function getApiBaseUrl(): string {
   return (process.env.NEXT_PUBLIC_API_BASE_URL ?? defaultBase).replace(/\/$/, "");

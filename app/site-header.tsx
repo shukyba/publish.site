@@ -3,11 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { SIGN_IN_URL } from "../lib/api";
+import { SIGN_IN_URL, SIGN_OFF_URL } from "../lib/api";
 import { withMountPath } from "../lib/mount-path";
 import { clearAuthState, loadAuth } from "../lib/campaign-store";
-
-const SIGN_OFF_URL = "https://iam.cliposts.com/sign-off";
 
 export function SiteHeader() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
