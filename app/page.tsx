@@ -1,35 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { GeneratorClient } from "./generator-client";
-import { SIGN_UP_URL } from "../lib/api";
 import { withMountPath } from "../lib/mount-path";
 import { HomeNav } from "./home-nav";
 import { ContactButton } from "./contact-button";
+import { PublishPricing } from "./publish-pricing";
 
-const plans = [
-  {
-    name: "Guest",
-    price: "$0",
-    description: "Generate and edit campaigns without signup.",
-    features: ["Generate 14-post campaigns", "Edit and regenerate posts", "Preview scheduling flow"],
-    ctaNote: "No signup required",
-  },
-  {
-    name: "Starter",
-    price: "$19",
-    description: "For creators ready to connect and schedule.",
-    features: ["Connect one social account", "Schedule selected posts", "Campaign history (coming soon)"],
-    cta: "Start Starter",
-  },
-  {
-    name: "Pro",
-    price: "$49",
-    description: "For teams running multiple campaign tracks.",
-    features: ["Connect multiple platforms", "Schedule all in one click", "Priority support"],
-    cta: "Go Pro",
-    featured: true,
-  },
-];
+export const dynamic = "force-dynamic";
 
 const faqs = [
   {
@@ -79,34 +56,7 @@ export default function Home() {
 
       <GeneratorClient />
 
-      <section className="pricing section-shell" id="pricing">
-        <div className="section-heading">
-          <span className="label">Pricing</span>
-          <h2>Move from idea to scheduled campaign faster.</h2>
-          <p>Keep the workflow lightweight now, plug in real social APIs later.</p>
-        </div>
-        <div className="pricing-grid">
-          {plans.map((plan) => (
-            <article className={`pricing-card ${plan.featured ? "pricing-card-featured" : ""}`} key={plan.name}>
-              <p className="plan-audience">{plan.name}</p>
-              <h3>{plan.price}</h3>
-              <p className="plan-description">{plan.description}</p>
-              <ul>
-                {plan.features.map((feature) => (
-                  <li key={feature}>{feature}</li>
-                ))}
-              </ul>
-              {plan.cta ? (
-                <a className="button button-primary button-plan" href={SIGN_UP_URL}>
-                  {plan.cta}
-                </a>
-              ) : (
-                <span className="plan-cta-note">{plan.ctaNote}</span>
-              )}
-            </article>
-          ))}
-        </div>
-      </section>
+      <PublishPricing />
 
       <section className="faq section-shell" id="faq">
         <div className="section-heading">
