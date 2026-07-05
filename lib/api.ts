@@ -308,8 +308,16 @@ export async function schedulePosts(
 
     const payload = (await res.json().catch(() => ({}))) as Record<string, unknown>;
     if (!res.ok) {
-      const code = typeof payload.code === "string" ? payload.code : "";
-      const message = typeof payload.message === "string" ? payload.message : res.statusText;
+      const code =
+        (typeof payload.code === "string" ? payload.code : "") ||
+        (typeof payload.Code === "string" ? payload.Code : "") ||
+        (res.status === 403 ? "PLATFORM_NOT_ON_PLAN" : "") ||
+        (res.status === 402 ? "POST_LIMIT_REACHED" : "") ||
+        (res.status === 401 ? "AUTH_REQUIRED" : "");
+      const message =
+        (typeof payload.message === "string" ? payload.message : "") ||
+        (typeof payload.Message === "string" ? payload.Message : "") ||
+        res.statusText;
       if (code === "POST_LIMIT_REACHED") {
         return {
           ok: false,

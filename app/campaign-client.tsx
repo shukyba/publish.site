@@ -211,6 +211,14 @@ export function CampaignClient() {
     setShowPlatformLimitModal(true);
   }
 
+  function guardPlatformForScheduling(message?: string): boolean {
+    if (isSchedulingAllowedForPlatform(publishQuota, platform)) {
+      return true;
+    }
+    openPlatformLimitModal(message);
+    return false;
+  }
+
   const upsertConnection = useCallback((next: SocialConnection) => {
     setConnections((prev) => prev.map((item) => (item.platform === next.platform ? next : item)));
   }, []);
@@ -403,7 +411,7 @@ export function CampaignClient() {
               "You have used all posts included in your plan for this month. Upgrade your plan or schedule fewer posts.",
           );
           setShowPostLimitModal(true);
-        } else if (result.code === "PLATFORM_NOT_ON_PLAN") {
+        } else if (result.code === "PLATFORM_NOT_ON_PLAN" || result.error?.includes("not included on your current plan")) {
           openPlatformLimitModal(result.error);
         } else {
           setError(result.error ?? "Could not schedule posts.");
@@ -438,12 +446,14 @@ export function CampaignClient() {
 
   async function handleScheduleSelected() {
     if (!campaign) return;
+    if (!guardPlatformForScheduling()) return;
     const ids = campaign.posts.filter((post) => post.selected).map((post) => post.id);
     openScheduleModal("schedule-selected", ids);
   }
 
   async function handleScheduleAll() {
     if (!campaign) return;
+    if (!guardPlatformForScheduling()) return;
     const ids = campaign.posts.map((post) => post.id);
     openScheduleModal("schedule-all", ids);
   }
@@ -462,8 +472,7 @@ export function CampaignClient() {
   }
 
   function requestSchedule(kind: "schedule-selected" | "schedule-all") {
-    if (isAuthenticated && !isSelectedPlatformOnPlan) {
-      openPlatformLimitModal();
+    if (!guardPlatformForScheduling()) {
       return;
     }
 
