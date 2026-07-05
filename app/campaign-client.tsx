@@ -1,12 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { generateCampaign, listConnections, schedulePosts, SIGN_IN_URL, SIGN_UP_URL } from "../lib/api";
+import { generateCampaign, getPublishQuota, listConnections, PublishQuotaStatus, schedulePosts, SIGN_IN_URL, SIGN_UP_URL } from "../lib/api";
 import { runPlatformConnect, runPlatformDisconnect } from "../lib/connect-oauth";
 import { usePublishRouter } from "../lib/use-publish-router";
 import { withMountPath } from "../lib/mount-path";
+import {
+  buildPlatformNotAllowedMessage,
+  getPlanPlatformInclusion,
+  getPublishPlanName,
+  isPlatformAllowedForPlan,
+  socialPlatformToPublishPlatform,
+} from "../lib/publish-plans";
 import {
   loadAuth,
   loadCampaign,
@@ -36,9 +43,9 @@ type SchedulePlan = {
 };
 
 const PLATFORM_OPTIONS: Array<{ value: SocialPlatform; label: string }> = [
-  { value: "linkedin", label: "LinkedIn" },
   { value: "x", label: "X" },
   { value: "facebook", label: "Facebook" },
+  { value: "linkedin", label: "LinkedIn" },
 ];
 
 const DEFAULT_CONNECTIONS: SocialConnection[] = PLATFORM_OPTIONS.map((option) => ({
@@ -49,6 +56,16 @@ const DEFAULT_CONNECTIONS: SocialConnection[] = PLATFORM_OPTIONS.map((option) =>
 function platformTitle(platform: SocialPlatform) {
   if (platform === "x") return "X";
   return platform[0].toUpperCase() + platform.slice(1);
+}
+
+function isSchedulingAllowedForPlatform(
+  quota: PublishQuotaStatus | null,
+  targetPlatform: SocialPlatform,
+): boolean {
+  if (quota?.allowedPlatforms.length) {
+    return quota.allowedPlatforms.includes(socialPlatformToPublishPlatform(targetPlatform));
+  }
+  return isPlatformAllowedForPlan(quota?.planId ?? 22, targetPlatform);
 }
 
 export function CampaignClient() {
@@ -67,7 +84,15 @@ export function CampaignClient() {
   const [isScheduling, setIsScheduling] = useState(false);
   const [showConnectPrompt, setShowConnectPrompt] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const [awaitingSignIn, setAwaitingSignIn] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showPostLimitModal, setShowPostLimitModal] = useState(false);
+  const [postLimitMessage, setPostLimitMessage] = useState<string | null>(null);
+  const [showConnectionErrorModal, setShowConnectionErrorModal] = useState(false);
+  const [connectionErrorMessage, setConnectionErrorMessage] = useState<string | null>(null);
+  const [showPlatformLimitModal, setShowPlatformLimitModal] = useState(false);
+  const [platformLimitMessage, setPlatformLimitMessage] = useState<string | null>(null);
+  const [publishQuota, setPublishQuota] = useState<PublishQuotaStatus | null>(null);
   const [pendingSchedulePlan, setPendingSchedulePlan] = useState<SchedulePlan | null>(null);
   const [scheduleAtInput, setScheduleAtInput] = useState("");
   const [pendingGuardedAction, setPendingGuardedAction] = useState<PendingGuardedAction | null>(null);
@@ -77,6 +102,10 @@ export function CampaignClient() {
 
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const coreIdeaParam = searchParams.get("coreIdea") ?? searchParams.get("seed") ?? "";
+  const platformParam = searchParams.get("platform") ?? "";
+  const metadataRaw = searchParams.get("metadata") ?? "";
 
   useEffect(() => {
     const authed = loadAuth();
@@ -92,11 +121,9 @@ export function CampaignClient() {
       return;
     }
 
-    const coreIdea = searchParams.get("coreIdea") ?? searchParams.get("seed");
-    const platformParam = searchParams.get("platform");
-    const metadataRaw = searchParams.get("metadata");
+    const coreIdea = coreIdeaParam.trim();
 
-    if (!coreIdea?.trim()) {
+    if (!coreIdea) {
       setIsHydrating(false);
       return;
     }
@@ -137,12 +164,21 @@ export function CampaignClient() {
       setNotice("Campaign created from Cliposts handoff payload.");
       router.replace("/campaign");
     });
-  }, [router, searchParams]);
+  }, [coreIdeaParam, metadataRaw, platformParam, router]);
 
   useEffect(() => {
     void listConnections(isAuthenticated).then((result) => {
       if (result.ok && result.data?.length) {
         setConnections(result.data);
+      }
+    });
+    if (!isAuthenticated) {
+      setPublishQuota(null);
+      return;
+    }
+    void getPublishQuota(isAuthenticated).then((result) => {
+      if (result.ok && result.data) {
+        setPublishQuota(result.data);
       }
     });
   }, [isAuthenticated]);
@@ -164,6 +200,16 @@ export function CampaignClient() {
   const allSelected = totalCount > 0 && selectedCount === totalCount;
   const selectedPlatformConnection = connections.find((item) => item.platform === platform);
   const isSelectedPlatformConnected = selectedPlatformConnection?.status === "connected";
+  const isSelectedPlatformOnPlan = isSchedulingAllowedForPlatform(publishQuota, platform);
+  const planPlatformInclusion = getPlanPlatformInclusion(
+    publishQuota?.planId,
+    publishQuota?.allowedPlatforms,
+  );
+
+  function openPlatformLimitModal(message?: string) {
+    setPlatformLimitMessage(message ?? buildPlatformNotAllowedMessage(platform));
+    setShowPlatformLimitModal(true);
+  }
 
   const upsertConnection = useCallback((next: SocialConnection) => {
     setConnections((prev) => prev.map((item) => (item.platform === next.platform ? next : item)));
@@ -176,74 +222,82 @@ export function CampaignClient() {
         return;
       }
       setPendingGuardedAction(action);
+      setAwaitingSignIn(false);
       setShowAuthPrompt(true);
     },
     [isAuthenticated],
   );
 
-  const continuePendingAction = useCallback(async () => {
-    if (!pendingGuardedAction) return;
-    if (pendingGuardedAction.type === "connect" && pendingGuardedAction.platform) {
-      await handleConnect(pendingGuardedAction.platform);
-      return;
-    }
-    if (pendingGuardedAction.type === "schedule-selected") {
-      await handleScheduleSelected();
-      return;
-    }
-    if (pendingGuardedAction.type === "schedule-all") {
-      await handleScheduleAll();
-    }
-  }, [pendingGuardedAction]);
+  const pendingGuardedActionRef = useRef<PendingGuardedAction | null>(null);
+  const pendingScheduleAfterConnectRef = useRef<"schedule-selected" | "schedule-all" | null>(null);
+  const showAuthPromptRef = useRef(false);
+  const resumeAfterAuthRef = useRef<(() => Promise<void>) | null>(null);
+  pendingGuardedActionRef.current = pendingGuardedAction;
+  pendingScheduleAfterConnectRef.current = pendingScheduleAfterConnect;
+  showAuthPromptRef.current = showAuthPrompt;
 
-  async function handleSignIn() {
-    setIsAuthenticated(true);
-    setShowAuthPrompt(false);
-    setPendingGuardedAction(null);
-    setNotice("Signed in. Connect and scheduling are now enabled.");
+  function handleSignIn() {
+    setAwaitingSignIn(true);
     window.open(SIGN_IN_URL, "_blank", "noopener,noreferrer");
-    await continuePendingAction();
-    if (pendingScheduleAfterConnect === "schedule-selected") {
-      await handleScheduleSelected();
-      setPendingScheduleAfterConnect(null);
-      return;
-    }
-    if (pendingScheduleAfterConnect === "schedule-all") {
-      await handleScheduleAll();
-      setPendingScheduleAfterConnect(null);
-    }
   }
 
-  async function handleConnect(targetPlatform: SocialPlatform) {
+  function openConnectionErrorModal(message: string) {
+    setConnectionErrorMessage(message);
+    setShowConnectionErrorModal(true);
+  }
+
+  async function handleConnect(targetPlatform: SocialPlatform): Promise<{ success: boolean; message?: string }> {
     setBusyConnection(targetPlatform);
     setError(null);
     const existing = connections.find((item) => item.platform === targetPlatform);
     if (!existing) {
       setBusyConnection(null);
-      return;
+      return { success: false, message: "Connection failed." };
     }
 
     upsertConnection({ ...existing, status: "connecting", lastError: undefined });
     setNotice("Complete login and page selection in the popup. This page updates when the connection is ready.");
     const connected = await runPlatformConnect(existing.platform, true);
     if (!connected.ok || !connected.data) {
+      const message = connected.error ?? "Could not connect account.";
       upsertConnection({
         ...existing,
         status: "error",
-        lastError: connected.error ?? "Connection failed.",
+        lastError: message,
       });
-      setError(connected.error ?? "Connection failed.");
+      setError(message);
       setBusyConnection(null);
-      return;
+      return { success: false, message };
     }
 
     upsertConnection(connected.data);
     if (connected.data.status === "connected") {
       setNotice(`${platformTitle(targetPlatform)} connected.`);
-    } else if (connected.data.status === "error") {
-      setError(connected.data.lastError ?? "Connection failed.");
+      setBusyConnection(null);
+      return { success: true };
     }
+
+    const message =
+      connected.data.lastError ??
+      (connected.data.status === "error"
+        ? "Could not start social connection. Check Postiz integration settings."
+        : "Connect flow did not complete.");
+    setError(message);
     setBusyConnection(null);
+    return { success: false, message };
+  }
+
+  async function continuePendingScheduleAfterConnect() {
+    const kind = pendingScheduleAfterConnectRef.current;
+    if (!kind) return;
+    setPendingScheduleAfterConnect(null);
+    if (kind === "schedule-selected") {
+      await handleScheduleSelected();
+      return;
+    }
+    if (kind === "schedule-all") {
+      await handleScheduleAll();
+    }
   }
 
   async function handleDisconnect(targetPlatform: SocialPlatform) {
@@ -340,10 +394,20 @@ export function CampaignClient() {
         platform,
         scheduleAtISO: dailyAt.toISOString(),
       };
-      const result = await schedulePosts(request, campaign, true);
+      const result = await schedulePosts(request, campaign, isAuthenticated);
       if (!result.ok || !result.data) {
         setIsScheduling(false);
-        setError(result.error ?? "Could not schedule posts.");
+        if (result.code === "POST_LIMIT_REACHED") {
+          setPostLimitMessage(
+            result.error ??
+              "You have used all posts included in your plan for this month. Upgrade your plan or schedule fewer posts.",
+          );
+          setShowPostLimitModal(true);
+        } else if (result.code === "PLATFORM_NOT_ON_PLAN") {
+          openPlatformLimitModal(result.error);
+        } else {
+          setError(result.error ?? "Could not schedule posts.");
+        }
         return;
       }
       if (!firstAtISO) firstAtISO = result.data.atISO;
@@ -398,6 +462,11 @@ export function CampaignClient() {
   }
 
   function requestSchedule(kind: "schedule-selected" | "schedule-all") {
+    if (isAuthenticated && !isSelectedPlatformOnPlan) {
+      openPlatformLimitModal();
+      return;
+    }
+
     if (!isSelectedPlatformConnected) {
       setPendingScheduleAfterConnect(kind);
       setShowConnectPrompt(true);
@@ -420,21 +489,67 @@ export function CampaignClient() {
     setShowConnectPrompt(false);
     if (!isAuthenticated) {
       setPendingGuardedAction({ type: "connect", platform });
+      setAwaitingSignIn(false);
       setShowAuthPrompt(true);
       return;
     }
 
-    await handleConnect(platform);
-    if (pendingScheduleAfterConnect === "schedule-selected") {
-      await handleScheduleSelected();
+    const result = await handleConnect(platform);
+    if (!result.success) {
       setPendingScheduleAfterConnect(null);
+      openConnectionErrorModal(result.message ?? "Could not connect account.");
       return;
     }
-    if (pendingScheduleAfterConnect === "schedule-all") {
-      await handleScheduleAll();
-      setPendingScheduleAfterConnect(null);
-    }
+
+    await continuePendingScheduleAfterConnect();
   }
+
+  resumeAfterAuthRef.current = async () => {
+    const action = pendingGuardedActionRef.current;
+    if (!action) return;
+
+    if (action.type === "connect" && action.platform) {
+      const result = await handleConnect(action.platform);
+      if (!result.success) {
+        setPendingScheduleAfterConnect(null);
+        openConnectionErrorModal(result.message ?? "Could not connect account.");
+        return;
+      }
+      await continuePendingScheduleAfterConnect();
+      return;
+    }
+
+    if (action.type === "schedule-selected") {
+      await handleScheduleSelected();
+      return;
+    }
+
+    if (action.type === "schedule-all") {
+      await handleScheduleAll();
+    }
+  };
+
+  useEffect(() => {
+    const checkAuthAndResume = () => {
+      if (!loadAuth()) return;
+
+      setIsAuthenticated(true);
+      if (!showAuthPromptRef.current || !pendingGuardedActionRef.current) return;
+
+      setShowAuthPrompt(false);
+      setAwaitingSignIn(false);
+      setPendingGuardedAction(null);
+      setNotice("Signed in. Continuing where you left off.");
+      void resumeAfterAuthRef.current?.();
+    };
+
+    window.addEventListener("focus", checkAuthAndResume);
+    document.addEventListener("visibilitychange", checkAuthAndResume);
+    return () => {
+      window.removeEventListener("focus", checkAuthAndResume);
+      document.removeEventListener("visibilitychange", checkAuthAndResume);
+    };
+  }, []);
 
   const hasCampaign = !!campaign && campaign.posts.length > 0;
 
@@ -476,6 +591,9 @@ export function CampaignClient() {
                       ? `Connected as ${selectedPlatformConnection.accountName}`
                       : "Connected"
                     : "Not connected"}
+                  {isAuthenticated && !isSelectedPlatformOnPlan
+                    ? ` · Not included on your plan`
+                    : null}
                 </p>
               </div>
               <div className="campaign-header-actions">
@@ -516,6 +634,13 @@ export function CampaignClient() {
                 </button>
               </div>
             </div>
+
+            {(notice || error) && (
+              <div className="campaign-flash">
+                {notice && <p className="flash flash-success">{notice}</p>}
+                {error && <p className="flash flash-error">{error}</p>}
+              </div>
+            )}
 
             <div className="bulk-actions">
               <button
@@ -580,11 +705,94 @@ export function CampaignClient() {
         </>
       )}
 
-      {(notice || error) && (
-        <section className="section-shell">
-          {notice && <p className="flash flash-success">{notice}</p>}
-          {error && <p className="flash flash-error">{error}</p>}
-        </section>
+      {showPlatformLimitModal && (
+        <div className="modal-backdrop" onClick={() => setShowPlatformLimitModal(false)}>
+          <div className="modal" onClick={(event) => event.stopPropagation()}>
+            <h3>Channel not on your plan</h3>
+            <p>
+              {platformLimitMessage ??
+                buildPlatformNotAllowedMessage(platform)}
+            </p>
+            <div className="plan-inclusion-panel">
+              <p className="plan-inclusion-heading">
+                Your plan
+                <strong>{getPublishPlanName(publishQuota?.planId)}</strong>
+              </p>
+              <ul className="plan-inclusion-list" aria-label="Scheduling channels on your plan">
+                {planPlatformInclusion.map((item) => (
+                  <li
+                    key={item.platform}
+                    className={`plan-inclusion-item ${item.included ? "is-included" : "is-excluded"}`}
+                  >
+                    <span className="plan-inclusion-platform">{item.platform}</span>
+                    <span
+                      className={`plan-inclusion-pill ${item.included ? "is-yes" : "is-no"}`}
+                    >
+                      <span className="plan-inclusion-mark" aria-hidden="true">
+                        {item.included ? "✓" : "✕"}
+                      </span>
+                      {item.included ? "Included" : "Not included"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="modal-actions modal-actions-inline">
+              <Link className="button button-primary" href={withMountPath("/#pricing")}>
+                View plans
+              </Link>
+              <button
+                className="button button-secondary"
+                type="button"
+                onClick={() => setShowPlatformLimitModal(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showConnectionErrorModal && (
+        <div className="modal-backdrop" onClick={() => setShowConnectionErrorModal(false)}>
+          <div className="modal" onClick={(event) => event.stopPropagation()}>
+            <h3>Connection failed</h3>
+            <p>{connectionErrorMessage ?? "Could not connect account. Please try again."}</p>
+            <div className="modal-actions modal-actions-inline">
+              <button
+                className="button button-primary"
+                type="button"
+                onClick={() => setShowConnectionErrorModal(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPostLimitModal && (
+        <div className="modal-backdrop" onClick={() => setShowPostLimitModal(false)}>
+          <div className="modal" onClick={(event) => event.stopPropagation()}>
+            <h3>Post limit reached</h3>
+            <p>
+              {postLimitMessage ??
+                "You have used all posts included in your plan for this month. Upgrade your plan or schedule fewer posts."}
+            </p>
+            <div className="modal-actions modal-actions-inline">
+              <Link className="button button-primary" href={withMountPath("/#pricing")}>
+                View plans
+              </Link>
+              <button
+                className="button button-secondary"
+                type="button"
+                onClick={() => setShowPostLimitModal(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {showConnectPrompt && (
@@ -660,6 +868,7 @@ export function CampaignClient() {
           className="modal-backdrop"
           onClick={() => {
             setShowAuthPrompt(false);
+            setAwaitingSignIn(false);
             setPendingGuardedAction(null);
             setPendingScheduleAfterConnect(null);
           }}
@@ -667,11 +876,13 @@ export function CampaignClient() {
           <div className="modal" onClick={(event) => event.stopPropagation()}>
             <h3>Sign in required</h3>
             <p>
-              Guests can generate and edit campaigns. Connecting and scheduling require sign-in.
+              {awaitingSignIn
+                ? "Complete sign-in in the other tab, then return here. Scheduling will continue automatically once you are signed in."
+                : "Guests can generate and edit campaigns. Connecting and scheduling require sign-in."}
             </p>
             <div className="modal-actions modal-actions-inline">
-              <button className="button button-primary" onClick={() => void handleSignIn()} type="button">
-                Sign in
+              <button className="button button-primary" onClick={handleSignIn} type="button">
+                {awaitingSignIn ? "Open sign in again" : "Sign in"}
               </button>
               <a className="button button-secondary" href={SIGN_UP_URL} target="_blank" rel="noreferrer">
                 Sign up

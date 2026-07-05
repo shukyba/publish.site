@@ -197,6 +197,44 @@ export async function listConnections(isAuthenticated: boolean): Promise<MockRes
   }
 }
 
+export type PublishQuotaStatus = {
+  planId: number;
+  creditsRemaining: number | null;
+  hasPaidPlan: boolean;
+  validUntil: string | null;
+  allowedPlatforms: string[];
+};
+
+export async function getPublishQuota(isAuthenticated: boolean): Promise<MockResult<PublishQuotaStatus>> {
+  try {
+    const res = await fetch(`${getApiBaseUrl()}/api/publish/quota`, {
+      cache: "no-store",
+      headers: authHeaders(isAuthenticated),
+    });
+    const payload = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+    if (!res.ok) {
+      const message = typeof payload.message === "string" ? payload.message : res.statusText;
+      return { ok: false, error: message || "Could not load plan quota." };
+    }
+
+    return {
+      ok: true,
+      data: {
+        planId: typeof payload.planId === "number" ? payload.planId : 22,
+        creditsRemaining:
+          typeof payload.creditsRemaining === "number" ? payload.creditsRemaining : null,
+        hasPaidPlan: payload.hasPaidPlan === true,
+        validUntil: typeof payload.validUntil === "string" ? payload.validUntil : null,
+        allowedPlatforms: Array.isArray(payload.allowedPlatforms)
+          ? payload.allowedPlatforms.filter((item): item is string => typeof item === "string")
+          : [],
+      },
+    };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "Could not load plan quota." };
+  }
+}
+
 export async function connectPlatform(
   platform: SocialPlatform,
   isAuthenticated: boolean,
@@ -268,9 +306,39 @@ export async function schedulePosts(
       }),
     });
 
-    const payload = await parseJsonResponse<ApiScheduleResponse>(res);
-    const atISO = payload.publishAtUtc ?? new Date(Date.now() + 60 * 60 * 1000).toISOString();
-    const scheduledIds = payload.posts.map((item) => item.clientPostId);
+    const payload = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+    if (!res.ok) {
+      const code = typeof payload.code === "string" ? payload.code : "";
+      const message = typeof payload.message === "string" ? payload.message : res.statusText;
+      if (code === "POST_LIMIT_REACHED") {
+        return {
+          ok: false,
+          code,
+          error:
+            message ||
+            "You have used all posts included in your plan for this month. Upgrade your plan or schedule fewer posts.",
+        };
+      }
+      if (code === "SIGN_IN_REQUIRED" || code === "AUTH_REQUIRED") {
+        return {
+          ok: false,
+          code,
+          error: message || "Sign in with a Cliposts account to schedule posts.",
+        };
+      }
+      if (code === "PLATFORM_NOT_ON_PLAN") {
+        return {
+          ok: false,
+          code,
+          error: message || "This platform is not included on your current plan.",
+        };
+      }
+      return { ok: false, code: code || undefined, error: message || "Could not schedule posts." };
+    }
+
+    const schedule = payload as ApiScheduleResponse;
+    const atISO = schedule.publishAtUtc ?? new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    const scheduledIds = schedule.posts.map((item) => item.clientPostId);
     return { ok: true, data: { scheduledIds, atISO } };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : "Could not schedule posts." };

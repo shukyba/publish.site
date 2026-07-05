@@ -745,6 +745,111 @@ textarea {
   min-width: 0;
 }
 
+.plan-inclusion-panel {
+  margin: 18px 0 4px;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.plan-inclusion-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+
+.plan-inclusion-heading strong {
+  color: var(--ink);
+  font-weight: 800;
+  text-transform: none;
+  letter-spacing: -0.02em;
+  font-size: 0.98rem;
+}
+
+.plan-inclusion-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plan-inclusion-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.plan-inclusion-platform {
+  font-size: 0.98rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.plan-inclusion-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  min-width: 128px;
+  padding: 4px 12px 4px 8px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.plan-inclusion-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.plan-inclusion-pill.is-yes {
+  background: rgba(31, 157, 102, 0.12);
+  color: var(--success);
+}
+
+.plan-inclusion-pill.is-yes .plan-inclusion-mark {
+  background: var(--success);
+  color: #fff;
+}
+
+.plan-inclusion-pill.is-no {
+  background: rgba(192, 57, 43, 0.1);
+  color: var(--danger);
+}
+
+.plan-inclusion-pill.is-no .plan-inclusion-mark {
+  background: var(--danger);
+  color: #fff;
+}
+
+.plan-inclusion-item.is-excluded .plan-inclusion-platform {
+  color: var(--muted);
+}
+
 .platform-modal-list {
   margin-top: 14px;
   display: grid;

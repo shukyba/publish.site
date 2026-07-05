@@ -1,5 +1,10 @@
+import type { SocialPlatform } from "./types";
+
 export const PUBLISH_PLATFORMS = ["Facebook", "X", "LinkedIn"] as const;
 export type PublishPlatform = (typeof PUBLISH_PLATFORMS)[number];
+
+/** Display order for platform lists in UI */
+export const PUBLISH_PLATFORM_DISPLAY_ORDER: PublishPlatform[] = ["X", "Facebook", "LinkedIn"];
 
 export type PublishPricingPlan = {
   name: string;
@@ -47,6 +52,7 @@ const BASE_PLANS: PublishPricingPlan[] = [
   },
   {
     name: "Scale",
+    stripePlanId: 23,
     price: "$99",
     posts: 450,
     platforms: ["Facebook", "X", "LinkedIn"],
@@ -58,4 +64,58 @@ const BASE_PLANS: PublishPricingPlan[] = [
 
 export async function getPublishPricingPlans(): Promise<PublishPricingPlan[]> {
   return BASE_PLANS;
+}
+
+/** PlanIds match dbo.Plans: 22 Free, 20 Starter, 21 Pro, 23 Scale */
+export const PUBLISH_PLAN_PLATFORMS: Record<number, PublishPlatform[]> = {
+  22: ["X"],
+  20: ["X", "Facebook"],
+  21: ["X", "Facebook"],
+  23: ["Facebook", "X", "LinkedIn"],
+};
+
+export function socialPlatformToPublishPlatform(platform: SocialPlatform): PublishPlatform {
+  if (platform === "x") return "X";
+  if (platform === "facebook") return "Facebook";
+  return "LinkedIn";
+}
+
+export function isPlatformAllowedForPlan(
+  planId: number | null | undefined,
+  platform: SocialPlatform,
+): boolean {
+  const resolvedPlanId = planId ?? 22;
+  const allowed = PUBLISH_PLAN_PLATFORMS[resolvedPlanId] ?? PUBLISH_PLAN_PLATFORMS[22];
+  return allowed.includes(socialPlatformToPublishPlatform(platform));
+}
+
+export function buildPlatformNotAllowedMessage(platform: SocialPlatform): string {
+  const name = socialPlatformToPublishPlatform(platform);
+  return `${name} is not included on your current plan. Upgrade your plan to schedule on ${name}.`;
+}
+
+export function getPublishPlanName(planId: number | null | undefined): string {
+  const resolvedPlanId = planId ?? 22;
+  if (resolvedPlanId === 22) return BASE_PLANS[0].name;
+  return BASE_PLANS.find((plan) => plan.stripePlanId === resolvedPlanId)?.name ?? BASE_PLANS[0].name;
+}
+
+export type PlanPlatformInclusion = {
+  platform: PublishPlatform;
+  included: boolean;
+};
+
+export function getPlanPlatformInclusion(
+  planId: number | null | undefined,
+  allowedPlatforms?: string[],
+): PlanPlatformInclusion[] {
+  const allowed = new Set(
+    allowedPlatforms?.length
+      ? allowedPlatforms
+      : PUBLISH_PLAN_PLATFORMS[planId ?? 22] ?? PUBLISH_PLAN_PLATFORMS[22],
+  );
+  return PUBLISH_PLATFORM_DISPLAY_ORDER.map((platform) => ({
+    platform,
+    included: allowed.has(platform),
+  }));
 }

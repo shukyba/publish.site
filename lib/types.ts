@@ -50,6 +50,7 @@ export type MockResult<T> = {
   ok: boolean;
   data?: T;
   error?: string;
+  code?: string;
 };
 
 export type ScheduledPostItem = {

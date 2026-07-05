@@ -15,13 +15,6 @@ const PLATFORM_OPTIONS: Array<{
   description: string;
 }> = [
   {
-    value: "linkedin",
-    label: "LinkedIn",
-    tone: "Professional",
-    icon: "in",
-    description: "Best for thought leadership, B2B insights, and founder storytelling.",
-  },
-  {
     value: "x",
     label: "X",
     tone: "Concise",
@@ -34,6 +27,13 @@ const PLATFORM_OPTIONS: Array<{
     tone: "Conversational",
     icon: "f",
     description: "Longer explanatory posts with community-first conversation framing.",
+  },
+  {
+    value: "linkedin",
+    label: "LinkedIn",
+    tone: "Professional",
+    icon: "in",
+    description: "Best for thought leadership, B2B insights, and founder storytelling.",
   },
 ];
 
