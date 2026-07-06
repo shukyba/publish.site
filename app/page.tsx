@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { GeneratorClient } from "./generator-client";
-import { withMountPath } from "../lib/mount-path";
 import { HomeNav } from "./home-nav";
-import { ContactButton } from "./contact-button";
 import { PublishPricing } from "./publish-pricing";
+import { SiteFooter } from "./site-footer";
 
 export const dynamic = "force-dynamic";
 
@@ -73,20 +71,7 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="footer section-shell">
-        <div className="brand">
-          <span className="brand-mark">P</span>
-          <span>Cliposts Publish</span>
-        </div>
-        <div className="footer-links">
-          <a href="#generator">Try it free</a>
-          <a href="#pricing">Pricing</a>
-          <a href="#faq">FAQ</a>
-          <Link href={withMountPath("/privacy")}>Privacy</Link>
-          <Link href={withMountPath("/terms")}>Terms</Link>
-          <ContactButton />
-        </div>
-      </footer>
+      <SiteFooter />
     </main>
   );
 }

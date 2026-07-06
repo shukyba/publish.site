@@ -14,15 +14,11 @@ export default function TermsPage() {
         <span className="label">Legal</span>
         <h1>Terms of Service</h1>
         <p className="legal-updated">Last updated: June 22, 2026</p>
-        <p>
-          Cliposts Publish is operated by <strong>Yehoshua Bahar</strong> (business legal name). In these Terms,
-          &quot;Cliposts&quot;, &quot;we&quot;, &quot;us&quot;, and &quot;our&quot; refer to Yehoshua Bahar.
-        </p>
 
         <h2>1. Acceptance</h2>
         <p>
-          By using Cliposts Publish, you agree to these Terms of Service with Yehoshua Bahar. If you do not agree, do
-          not use the service.
+          By using Cliposts Publish, you agree to these Terms of Service. If you do not agree, do not use the
+          service.
         </p>
 
         <h2>2. Service Description</h2>
@@ -86,8 +82,7 @@ export default function TermsPage() {
 
         <h2>11. Contact</h2>
         <p>
-          For questions about these Terms, contact Yehoshua Bahar at{" "}
-          <a href="mailto:support@cliposts.com">support@cliposts.com</a>
+          For questions about these Terms, contact: <a href="mailto:support@cliposts.com">support@cliposts.com</a>
         </p>
       </section>
     </main>

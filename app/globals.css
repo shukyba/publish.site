@@ -1184,6 +1184,21 @@ details p {
   color: var(--muted);
 }
 
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.footer-operator {
+  margin: 0;
+  padding-left: 42px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: normal;
+}
+
 .footer-links {
   display: flex;
   align-items: center;
