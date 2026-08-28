@@ -175,6 +175,28 @@ export async function generateCampaign(seed: CampaignSeed): Promise<MockResult<G
   }
 }
 
+/**
+ * Pushes a browser-side failure into the server log. Best effort: the connect popup
+ * closes quickly, so the browser console is usually lost by the time anyone looks.
+ */
+export async function reportClientError(report: {
+  stage: string;
+  platform?: string;
+  message: string;
+  details?: string;
+}): Promise<void> {
+  try {
+    await fetch(`${getApiBaseUrl()}/api/publish/connections/client-errors`, {
+      method: "POST",
+      keepalive: true,
+      headers: { "Content-Type": "application/json", ...authHeaders(true) },
+      body: JSON.stringify(report),
+    });
+  } catch {
+    // Never let diagnostics break the flow.
+  }
+}
+
 export async function listConnections(isAuthenticated: boolean): Promise<MockResult<SocialConnection[]>> {
   try {
     const res = await fetch(`${getApiBaseUrl()}/api/publish/connections`, {
@@ -282,6 +304,61 @@ export async function disconnectPlatform(
     };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : "Could not disconnect account." };
+  }
+}
+
+export type FacebookPageOption = {
+  pageId: string;
+  pageName: string;
+};
+
+export async function listFacebookPages(
+  isAuthenticated: boolean,
+): Promise<MockResult<FacebookPageOption[]>> {
+  try {
+    const res = await fetch(`${getApiBaseUrl()}/api/publish/connections/facebook/pages`, {
+      cache: "no-store",
+      headers: authHeaders(isAuthenticated),
+    });
+    const payload = await parseJsonResponse<FacebookPageOption[]>(res);
+    return {
+      ok: true,
+      data: payload.map((item) => ({
+        pageId: item.pageId,
+        pageName: item.pageName,
+      })),
+    };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "Could not load Facebook pages." };
+  }
+}
+
+export async function selectFacebookPage(
+  pageId: string,
+  isAuthenticated: boolean,
+): Promise<MockResult<SocialConnection>> {
+  try {
+    const res = await fetch(`${getApiBaseUrl()}/api/publish/connections/facebook/pages/select`, {
+      method: "POST",
+      headers: {
+        ...authHeaders(isAuthenticated),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ pageId }),
+    });
+    const payload = await parseJsonResponse<ApiSocialConnection>(res);
+    return {
+      ok: true,
+      data: {
+        platform: platformFromApi(payload.platform),
+        status: connectionStatusFromApi(payload.status),
+        accountName: payload.accountName,
+        lastError: payload.lastError,
+        authUrl: payload.authUrl,
+      },
+    };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "Could not select Facebook page." };
   }
 }
 

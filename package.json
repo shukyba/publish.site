@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "test:e2e:smoke": "node ./scripts/playwright-smoke.mjs",
-    "test:e2e:regression": "node ./scripts/playwright-regression.mjs"
+    "test:e2e:regression": "node ./scripts/playwright-regression.mjs",
+    "test:e2e:facebook-connect": "node ./scripts/playwright-facebook-connect.mjs"
   },
   "dependencies": {
     "next": "latest",

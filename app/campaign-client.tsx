@@ -31,6 +31,7 @@ import {
   SocialPlatform,
 } from "../lib/types";
 import { SiteHeader } from "./site-header";
+import { getEnabledSocialPlatforms } from "../lib/social-config";
 
 type PendingGuardedAction = {
   type: "connect" | "schedule-selected" | "schedule-all";
@@ -42,11 +43,17 @@ type SchedulePlan = {
   postIds: string[];
 };
 
-const PLATFORM_OPTIONS: Array<{ value: SocialPlatform; label: string }> = [
+const ALL_PLATFORM_OPTIONS: Array<{ value: SocialPlatform; label: string }> = [
   { value: "x", label: "X" },
   { value: "facebook", label: "Facebook" },
   { value: "linkedin", label: "LinkedIn" },
 ];
+
+const ENABLED_PLATFORMS = new Set<SocialPlatform>(getEnabledSocialPlatforms());
+
+const PLATFORM_OPTIONS = ALL_PLATFORM_OPTIONS.filter((option) => ENABLED_PLATFORMS.has(option.value));
+
+const DEFAULT_PLATFORM: SocialPlatform = PLATFORM_OPTIONS[0]?.value ?? "facebook";
 
 const DEFAULT_CONNECTIONS: SocialConnection[] = PLATFORM_OPTIONS.map((option) => ({
   platform: option.value,
@@ -75,7 +82,7 @@ export function CampaignClient() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [campaign, setCampaign] = useState<GeneratedCampaign | null>(null);
   const [connections, setConnections] = useState<SocialConnection[]>(DEFAULT_CONNECTIONS);
-  const [platform, setPlatform] = useState<SocialPlatform>("linkedin");
+  const [platform, setPlatform] = useState<SocialPlatform>(DEFAULT_PLATFORM);
 
   const [isHydrating, setIsHydrating] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -116,7 +123,7 @@ export function CampaignClient() {
     const saved = loadCampaign();
     if (saved) {
       setCampaign(saved);
-      setPlatform(saved.seed.platform);
+      setPlatform(PLATFORM_OPTIONS.some((item) => item.value === saved.seed.platform) ? saved.seed.platform : DEFAULT_PLATFORM);
       setIsHydrating(false);
       return;
     }
@@ -140,7 +147,7 @@ export function CampaignClient() {
     const safePlatform =
       platformParam && PLATFORM_OPTIONS.some((item) => item.value === platformParam)
         ? (platformParam as SocialPlatform)
-        : "linkedin";
+        : DEFAULT_PLATFORM;
 
     const seed: CampaignSeed = {
       id: `seed_${Date.now()}`,
@@ -288,7 +295,7 @@ export function CampaignClient() {
     const message =
       connected.data.lastError ??
       (connected.data.status === "error"
-        ? "Could not start social connection. Check Postiz integration settings."
+        ? "Could not start social connection. Check social app settings."
         : "Connect flow did not complete.");
     setError(message);
     setBusyConnection(null);

@@ -6,8 +6,9 @@ import { refreshPlatformConnections, runPlatformConnect, runPlatformDisconnect }
 import { loadAuth, loadConnections, saveAuth, saveCampaign, saveConnections } from "../lib/campaign-store";
 import { usePublishRouter } from "../lib/use-publish-router";
 import { CampaignSeed, SocialConnection, SocialPlatform } from "../lib/types";
+import { getEnabledSocialPlatforms } from "../lib/social-config";
 
-const PLATFORM_OPTIONS: Array<{
+const ALL_PLATFORM_OPTIONS: Array<{
   value: SocialPlatform;
   label: string;
   tone: string;
@@ -37,6 +38,12 @@ const PLATFORM_OPTIONS: Array<{
   },
 ];
 
+const ENABLED_PLATFORMS = new Set<SocialPlatform>(getEnabledSocialPlatforms());
+
+const PLATFORM_OPTIONS = ALL_PLATFORM_OPTIONS.filter((option) => ENABLED_PLATFORMS.has(option.value));
+
+const DEFAULT_PLATFORM: SocialPlatform = PLATFORM_OPTIONS[0]?.value ?? "facebook";
+
 function getDefaultConnections(): SocialConnection[] {
   return PLATFORM_OPTIONS.map((option) => ({
     platform: option.value,
@@ -58,7 +65,7 @@ function normalizeConnections(saved: SocialConnection[] | null): SocialConnectio
 export function GeneratorClient() {
   const router = usePublishRouter();
   const [coreIdea, setCoreIdea] = useState("");
-  const [platform, setPlatform] = useState<SocialPlatform>("linkedin");
+  const [platform, setPlatform] = useState<SocialPlatform>(DEFAULT_PLATFORM);
   const [isAuthenticated, setIsAuthenticated] = useState(() => loadAuth());
   const [connections, setConnections] = useState<SocialConnection[]>(() => normalizeConnections(loadConnections()));
   const [isGenerating, setIsGenerating] = useState(false);
@@ -168,7 +175,7 @@ export function GeneratorClient() {
     upsertConnection(result.data);
     if (result.data.status === "error") {
       const message =
-        result.data.lastError ?? "Could not start social connection. Check Postiz integration settings.";
+        result.data.lastError ?? "Could not start social connection. Check social app settings.";
       setError(message);
       setModalError(message);
       return;

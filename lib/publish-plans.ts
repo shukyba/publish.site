@@ -24,8 +24,8 @@ const BASE_PLANS: PublishPricingPlan[] = [
     name: "Free",
     price: "$0",
     posts: 14,
-    platforms: ["X"],
-    description: "Try the full flow on X.",
+    platforms: ["Facebook"],
+    description: "Try the full flow on Facebook.",
     features: ["Generate posts from one idea", "Edit and regenerate posts", "Preview scheduling flow"],
     ctaNote: "No signup required",
   },
@@ -68,7 +68,7 @@ export async function getPublishPricingPlans(): Promise<PublishPricingPlan[]> {
 
 /** PlanIds match dbo.Plans: 22 Free, 20 Starter, 21 Pro, 23 Scale */
 export const PUBLISH_PLAN_PLATFORMS: Record<number, PublishPlatform[]> = {
-  22: ["X"],
+  22: ["Facebook"],
   20: ["X", "Facebook"],
   21: ["X", "Facebook"],
   23: ["Facebook", "X", "LinkedIn"],
