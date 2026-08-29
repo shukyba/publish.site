@@ -154,9 +154,7 @@ export function ScheduledPostsClient() {
 
     const map = new Map<string, ScheduledPostItem[]>();
     for (const item of sorted) {
-      const coreIdeaKey = readCoreIdeaKey(item.messageText || "");
-      const timeKey = readTimeKey(item.publishAtUtc);
-      const key = `${item.platform}|${timeKey}|${coreIdeaKey}`;
+      const key = item.scheduleId;
       const current = map.get(key);
       if (current) current.push(item);
       else map.set(key, [item]);

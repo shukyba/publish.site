@@ -127,6 +127,7 @@ type ApiScheduleResponse = {
     dayNumber?: number;
     messageText?: string;
     status: string;
+    publishAtUtc?: string;
   }>;
 };
 
@@ -377,7 +378,7 @@ export async function schedulePosts(
         publishAtUtc: request.scheduleAtISO,
         posts: campaign.posts.map((post) => ({
           clientPostId: post.id,
-          dayNumber: 1,
+          dayNumber: post.day,
           messageText: post.text,
         })),
       }),
@@ -465,7 +466,7 @@ export async function listScheduledPosts(isAuthenticated: boolean): Promise<Mock
           messageText: post.messageText ?? "",
           platform: platformFromApi(item.platform),
           status: publishStatusFromApi(post.status || item.status),
-          publishAtUtc: item.publishAtUtc,
+          publishAtUtc: post.publishAtUtc ?? item.publishAtUtc,
         }));
       }),
     };

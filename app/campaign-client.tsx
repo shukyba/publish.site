@@ -397,36 +397,29 @@ export function CampaignClient() {
     setIsScheduling(true);
     setError(null);
 
-    let firstAtISO: string | null = null;
-    for (let index = 0; index < orderedPosts.length; index += 1) {
-      const post = orderedPosts[index];
-      const dailyAt = new Date(startAt);
-      dailyAt.setDate(startAt.getDate() + index);
-
-      const request: ScheduleRequest = {
-        campaignId: campaign.id,
-        postIds: [post.id],
-        platform,
-        scheduleAtISO: dailyAt.toISOString(),
-      };
-      const result = await schedulePosts(request, campaign, isAuthenticated);
-      if (!result.ok || !result.data) {
-        setIsScheduling(false);
-        if (result.code === "POST_LIMIT_REACHED") {
-          setPostLimitMessage(
-            result.error ??
-              "You have used all posts included in your plan for this month. Upgrade your plan or schedule fewer posts.",
-          );
-          setShowPostLimitModal(true);
-        } else if (result.code === "PLATFORM_NOT_ON_PLAN" || result.error?.includes("not included on your current plan")) {
-          openPlatformLimitModal(result.error);
-        } else {
-          setError(result.error ?? "Could not schedule posts.");
-        }
-        return;
+    const request: ScheduleRequest = {
+      campaignId: campaign.id,
+      postIds: orderedPosts.map((post) => post.id),
+      platform,
+      scheduleAtISO: startAt.toISOString(),
+    };
+    const result = await schedulePosts(request, campaign, isAuthenticated);
+    if (!result.ok || !result.data) {
+      setIsScheduling(false);
+      if (result.code === "POST_LIMIT_REACHED") {
+        setPostLimitMessage(
+          result.error ??
+            "You have used all posts included in your plan for this month. Upgrade your plan or schedule fewer posts.",
+        );
+        setShowPostLimitModal(true);
+      } else if (result.code === "PLATFORM_NOT_ON_PLAN" || result.error?.includes("not included on your current plan")) {
+        openPlatformLimitModal(result.error);
+      } else {
+        setError(result.error ?? "Could not schedule posts.");
       }
-      if (!firstAtISO) firstAtISO = result.data.atISO;
+      return;
     }
+    const firstAtISO = result.data.atISO;
 
     setIsScheduling(false);
     setCampaign((prev) => {
