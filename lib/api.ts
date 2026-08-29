@@ -377,7 +377,7 @@ export async function schedulePosts(
         publishAtUtc: request.scheduleAtISO,
         posts: campaign.posts.map((post) => ({
           clientPostId: post.id,
-          dayNumber: post.day,
+          dayNumber: 1,
           messageText: post.text,
         })),
       }),
