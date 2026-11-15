@@ -280,7 +280,7 @@ export function CampaignClient() {
         status: "error",
         lastError: message,
       });
-      setError(message);
+      setNotice(null);
       setBusyConnection(null);
       return { success: false, message };
     }
@@ -297,9 +297,17 @@ export function CampaignClient() {
       (connected.data.status === "error"
         ? "Could not start social connection. Check social app settings."
         : "Connect flow did not complete.");
-    setError(message);
+    setNotice(null);
     setBusyConnection(null);
     return { success: false, message };
+  }
+
+  async function connectAndReport(targetPlatform: SocialPlatform) {
+    const result = await handleConnect(targetPlatform);
+    if (!result.success) {
+      openConnectionErrorModal(result.message ?? "Could not connect account.");
+    }
+    return result;
   }
 
   async function continuePendingScheduleAfterConnect() {
@@ -503,10 +511,9 @@ export function CampaignClient() {
       return;
     }
 
-    const result = await handleConnect(platform);
+    const result = await connectAndReport(platform);
     if (!result.success) {
       setPendingScheduleAfterConnect(null);
-      openConnectionErrorModal(result.message ?? "Could not connect account.");
       return;
     }
 
@@ -518,10 +525,9 @@ export function CampaignClient() {
     if (!action) return;
 
     if (action.type === "connect" && action.platform) {
-      const result = await handleConnect(action.platform);
+      const result = await connectAndReport(action.platform);
       if (!result.success) {
         setPendingScheduleAfterConnect(null);
-        openConnectionErrorModal(result.message ?? "Could not connect account.");
         return;
       }
       await continuePendingScheduleAfterConnect();
@@ -619,7 +625,7 @@ export function CampaignClient() {
                   <button
                     className="button button-secondary"
                     type="button"
-                    onClick={() => void handleConnect(platform)}
+                    onClick={() => void connectAndReport(platform)}
                     disabled={busyConnection === platform || isDisconnecting}
                   >
                     {busyConnection === platform ? "Connecting..." : `Connect ${platformTitle(platform)}`}
