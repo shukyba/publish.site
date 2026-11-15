@@ -1,8 +1,21 @@
-import { getPublishPricingPlans, PUBLISH_PLATFORMS } from "../lib/publish-plans";
+import {
+  formatPublishPlatformList,
+  getPublishPricingPlans,
+  getVisiblePublishPlatforms,
+  type PublishPricingPlan,
+  type PublishPlatform,
+} from "../lib/publish-plans";
 import { PlanCheckoutButton } from "./plan-checkout-button";
+
+function planDescription(plan: PublishPricingPlan, visiblePlatforms: PublishPlatform[]): string {
+  if (plan.name !== "Starter" && plan.name !== "Pro") return plan.description;
+  const included = visiblePlatforms.filter((platform) => plan.platforms.includes(platform));
+  return `For creators on ${formatPublishPlatformList(included, "and")}.`;
+}
 
 export async function PublishPricing() {
   const plans = await getPublishPricingPlans();
+  const visiblePlatforms = getVisiblePublishPlatforms();
 
   return (
     <section className="pricing section-shell" id="pricing">
@@ -24,7 +37,7 @@ export async function PublishPricing() {
                 <strong>{plan.posts.toLocaleString()}</strong> posts / month
               </p>
               <div className="plan-platforms" aria-label="Included channels">
-                {PUBLISH_PLATFORMS.map((platform) => {
+                {visiblePlatforms.map((platform) => {
                   const included = plan.platforms.includes(platform);
                   return (
                     <span
@@ -37,7 +50,7 @@ export async function PublishPricing() {
                   );
                 })}
               </div>
-              <p className="plan-description">{plan.description}</p>
+              <p className="plan-description">{planDescription(plan, visiblePlatforms)}</p>
               <ul>
                 {plan.features.map((feature) => (
                   <li key={feature}>{feature}</li>

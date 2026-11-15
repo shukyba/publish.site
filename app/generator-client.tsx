@@ -234,7 +234,7 @@ export function GeneratorClient() {
             <textarea
               value={coreIdea}
               onChange={(event) => setCoreIdea(event.target.value)}
-              placeholder="Example: We helped founders repurpose product webinars into an educational LinkedIn series."
+              placeholder="Example: We helped founders repurpose product webinars into a short educational series."
             />
           </label>
         </div>

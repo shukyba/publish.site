@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { formatPublishPlatformList, getVisiblePublishPlatforms } from "../lib/publish-plans";
 import { GeneratorClient } from "./generator-client";
 import { HomeNav } from "./home-nav";
 import { PublishPricing } from "./publish-pricing";
@@ -39,8 +40,8 @@ export default function Home() {
         <span className="label">Publish by Cliposts</span>
         <h1>Turn one core idea into 14 days of social follow-up.</h1>
         <p className="hero-copy">
-          Generate, refine, and schedule campaign posts for LinkedIn, X, or Facebook from one clean
-          workflow.
+          Generate, refine, and schedule campaign posts for {formatPublishPlatformList(getVisiblePublishPlatforms())} from
+          one clean workflow.
         </p>
         <div className="hero-cta">
           <a className="button button-primary" href="#generator">

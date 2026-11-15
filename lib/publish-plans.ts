@@ -1,3 +1,4 @@
+import { getEnabledSocialPlatforms } from "./social-config";
 import type { SocialPlatform } from "./types";
 
 export const PUBLISH_PLATFORMS = ["Facebook", "X", "LinkedIn"] as const;
@@ -80,6 +81,22 @@ export function socialPlatformToPublishPlatform(platform: SocialPlatform): Publi
   return "LinkedIn";
 }
 
+/** Platforms currently offered in the UI. Matches Socials:EnabledPlatforms via NEXT_PUBLIC_ENABLED_SOCIALS. */
+export function getVisiblePublishPlatforms(): PublishPlatform[] {
+  const enabled = new Set(getEnabledSocialPlatforms().map(socialPlatformToPublishPlatform));
+  return PUBLISH_PLATFORM_DISPLAY_ORDER.filter((platform) => enabled.has(platform));
+}
+
+export function formatPublishPlatformList(
+  platforms: readonly PublishPlatform[],
+  conjunction: "and" | "or" = "or",
+): string {
+  if (platforms.length === 0) return "Facebook";
+  if (platforms.length === 1) return platforms[0];
+  if (platforms.length === 2) return `${platforms[0]} ${conjunction} ${platforms[1]}`;
+  return `${platforms.slice(0, -1).join(", ")}, ${conjunction} ${platforms[platforms.length - 1]}`;
+}
+
 export function isPlatformAllowedForPlan(
   planId: number | null | undefined,
   platform: SocialPlatform,
@@ -114,7 +131,7 @@ export function getPlanPlatformInclusion(
       ? allowedPlatforms
       : PUBLISH_PLAN_PLATFORMS[planId ?? 22] ?? PUBLISH_PLAN_PLATFORMS[22],
   );
-  return PUBLISH_PLATFORM_DISPLAY_ORDER.map((platform) => ({
+  return getVisiblePublishPlatforms().map((platform) => ({
     platform,
     included: allowed.has(platform),
   }));
